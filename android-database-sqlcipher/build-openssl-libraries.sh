@@ -28,13 +28,24 @@ OPENSSL=openssl-$3
  NDK_TOOLCHAIN_VERSION=4.9
  ANDROID_LIB_ROOT=../android-libs
  ANDROID_TOOLCHAIN_DIR=/tmp/sqlcipher-android-toolchain
+#  OPENSSL_CONFIGURE_OPTIONS="-fPIC no-idea no-camellia \
+#  no-seed no-bf no-cast no-rc2 no-rc4 no-rc5 no-md2 \
+#  no-md4 no-ecdh no-sock no-ssl3 \
+#  no-dsa no-dh no-ec no-ecdsa no-tls1 \
+#  no-rfc3779 no-whirlpool no-srp \
+#  no-mdc2 no-ecdh no-engine \
+#  no-srtp"
+
  OPENSSL_CONFIGURE_OPTIONS="-fPIC no-idea no-camellia \
- no-seed no-bf no-cast no-rc2 no-rc4 no-rc5 no-md2 \
- no-md4 no-ecdh no-sock no-ssl3 \
- no-dsa no-dh no-ec no-ecdsa no-tls1 \
- no-rfc3779 no-whirlpool no-srp \
- no-mdc2 no-ecdh no-engine \
- no-srtp"
+ no-seed no-bf no-cast no-rc2 no-rc5 no-md2 no-ripemd \
+ no-md4 no-ecdh no-sock no-ssl \
+ no-dsa no-dh no-ec no-ecdsa no-tls  \
+ no-rfc3779 no-whirlpool no-srp no-gost \
+ no-mdc2 no-engine no-ec2m no-engine no-err no-filenames \
+ no-des no-comp no-cms no-ct no-dgram no-deprecated no-capieng \
+ no-aria no-aria no-bf no-blake2 no-chacha no-cmac no-ocb no-poly1305 \
+ no-rmd160 no-scrypt no-siphash no-sm2 no-sm3 no-ts no-autoerrinit \
+ no-srtp no-ocsp no-psk no-sse2 no-tests no-ui no-dtls"
 
  HOST_INFO=`uname -a`
  case ${HOST_INFO} in
@@ -55,10 +66,10 @@ OPENSSL=openssl-$3
          ;;
  esac
 
- rm -rf ${ANDROID_LIB_ROOT}
  
- for SQLCIPHER_TARGET_PLATFORM in armeabi armeabi-v7a x86 x86_64 arm64-v8a
+ for SQLCIPHER_TARGET_PLATFORM in arm64-v8a armeabi armeabi-v7a x86 x86_64 arm64-v8a
  do
+     rm -rf ${ANDROID_LIB_ROOT}/${SQLCIPHER_TARGET_PLATFORM}
      echo "Building libcrypto.a for ${SQLCIPHER_TARGET_PLATFORM}"
      case "${SQLCIPHER_TARGET_PLATFORM}" in
          armeabi)
@@ -132,7 +143,8 @@ OPENSSL=openssl-$3
                 -D__ANDROID_API__=${ANDROID_API_VERSION} \
                 -D_FILE_OFFSET_BITS=${OFFSET_BITS} \
                 ${OPENSSL_CONFIGURE_OPTIONS} \
-                --sysroot=${TOOLCHAIN_DIR}/sysroot
+                --sysroot=${TOOLCHAIN_DIR}/sysroot \
+                -DOPENSSL_SMALL_FOOTPRINT
 
      if [ $? -ne 0 ]; then
          echo "Error executing:./Configure ${CONFIGURE_ARCH} ${OPENSSL_CONFIGURE_OPTIONS}"
@@ -146,6 +158,12 @@ OPENSSL=openssl-$3
          echo "Error executing make for platform:${SQLCIPHER_TARGET_PLATFORM}"
          exit 1
      fi
-     mv libcrypto.a ${ANDROID_LIB_ROOT}/${SQLCIPHER_TARGET_PLATFORM}
+     cp libcrypto.a ${ANDROID_LIB_ROOT}/${SQLCIPHER_TARGET_PLATFORM}
+     mkdir -p ${ANDROID_LIB_ROOT}/prebuilt/${SQLCIPHER_TARGET_PLATFORM}/lib
+     cp libcrypto.a ${ANDROID_LIB_ROOT}/prebuilt/${SQLCIPHER_TARGET_PLATFORM}/lib
  done
+
+    rm -rf ${ANDROID_LIB_ROOT}/prebuilt/include
+    cp -r include ${ANDROID_LIB_ROOT}/prebuilt
+
 )

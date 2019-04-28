@@ -1,100 +1,129 @@
-apply plugin: "maven"
-apply plugin: "signing"
-import org.gradle.plugins.signing.Sign
+// apply plugin: "maven"
+// apply plugin: "signing"
+// import org.gradle.plugins.signing.Sign
 
-def isReleaseBuild() {
-  return mavenVersionName.contains("SNAPSHOT") == false
+// def isReleaseBuild() {
+//   return mavenVersionName.contains("SNAPSHOT") == false
+// }
+
+// def getReleaseRepositoryUrl() {
+//   return hasProperty('mavenReleaseRepositoryUrl') ? mavenReleaseRepositoryUrl
+//   : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+// }
+
+// def getSnapshotRepositoryUrl() {
+//   if(hasProperty('mavenLocalRepositoryPrefix')) {
+//     return "${mavenLocalRepositoryPrefix}${buildDir}/${mavenSnapshotRepositoryUrl}"
+//   } else {
+//     return hasProperty('mavenSnapshotRepositoryUrl') ? mavenSnapshotRepositoryUrl
+//     : "https://oss.sonatype.org/content/repositories/snapshots/"
+//   }
+// }
+
+// def getRepositoryUsername() {
+//   return hasProperty('nexusUsername') ? nexusUsername : ""
+// }
+
+// def getRepositoryPassword() {
+//   return hasProperty('nexusPassword') ? nexusPassword : ""
+// }
+
+// gradle.taskGraph.whenReady { taskGraph ->
+//   if (taskGraph.allTasks.any { it instanceof Sign }) {
+//     allprojects { ext."signing.keyId" = "${signingKeyId}" }
+//     allprojects { ext."signing.secretKeyRingFile" = "${signingKeyRingFile}" }
+//     allprojects { ext."signing.password" = "${signingKeyPassword}" }
+//   }
+// }
+
+// afterEvaluate { project ->
+//   uploadArchives {
+//     repositories {
+//       mavenDeployer {
+//         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+//         pom.groupId = mavenGroup
+//         pom.artifactId = mavenArtifactId
+//         pom.version = mavenVersionName
+
+//         repository(url: getReleaseRepositoryUrl()) {
+//           authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+//         }
+//         snapshotRepository(url: getSnapshotRepositoryUrl()) {
+//           authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+//         }
+
+//         pom.project {
+//           name mavenArtifactId
+//           packaging mavenPackaging
+//           description mavenPomDescription
+//           url mavenPomUrl
+
+//           scm {
+//             url mavenScmUrl
+//             connection mavenScmConnection
+//             developerConnection mavenScmDeveloperConnection
+//           }
+
+//           licenses {
+//             license {
+//               url mavenLicenseUrl
+//             }
+//           }
+
+//           developers {
+//             developer {
+//               name mavenDeveloperName
+//               email mavenDeveloperEmail
+//               organization mavenDeveloperOrganization
+//               organizationUrl mavenDeveloperUrl
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+
+//   signing {
+//     required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+//     sign configurations.archives
+//   }
+
+//   task androidSourcesJar(type: Jar) {
+//     classifier = "sources"
+//     from android.sourceSets.main.java.sourceFiles
+//   }
+
+//   artifacts {
+//     archives androidSourcesJar
+//   }
+// }
+
+apply plugin: 'maven-publish'
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
 }
 
-def getReleaseRepositoryUrl() {
-  return hasProperty('mavenReleaseRepositoryUrl') ? mavenReleaseRepositoryUrl
-  : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-}
-
-def getSnapshotRepositoryUrl() {
-  if(hasProperty('mavenLocalRepositoryPrefix')) {
-    return "${mavenLocalRepositoryPrefix}${buildDir}/${mavenSnapshotRepositoryUrl}"
-  } else {
-    return hasProperty('mavenSnapshotRepositoryUrl') ? mavenSnapshotRepositoryUrl
-    : "https://oss.sonatype.org/content/repositories/snapshots/"
-  }
-}
-
-def getRepositoryUsername() {
-  return hasProperty('nexusUsername') ? nexusUsername : ""
-}
-
-def getRepositoryPassword() {
-  return hasProperty('nexusPassword') ? nexusPassword : ""
-}
-
-gradle.taskGraph.whenReady { taskGraph ->
-  if (taskGraph.allTasks.any { it instanceof Sign }) {
-    allprojects { ext."signing.keyId" = "${signingKeyId}" }
-    allprojects { ext."signing.secretKeyRingFile" = "${signingKeyRingFile}" }
-    allprojects { ext."signing.password" = "${signingKeyPassword}" }
-  }
-}
-
-afterEvaluate { project ->
-  uploadArchives {
-    repositories {
-      mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-        pom.groupId = mavenGroup
-        pom.artifactId = mavenArtifactId
-        pom.version = mavenVersionName
-
-        repository(url: getReleaseRepositoryUrl()) {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+publishing {
+    publications {
+        bar(MavenPublication) {
+            groupId "com.justsafe.android.base"
+            artifactId mavenArtifactId
+            version mavenVersionName
+            artifact sourcesJar
+            artifact("$buildDir/outputs/aar/${mavenArtifactId}-${mavenVersionName}.aar")
         }
-        snapshotRepository(url: getSnapshotRepositoryUrl()) {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-        }
-
-        pom.project {
-          name mavenArtifactId
-          packaging mavenPackaging
-          description mavenPomDescription
-          url mavenPomUrl
-
-          scm {
-            url mavenScmUrl
-            connection mavenScmConnection
-            developerConnection mavenScmDeveloperConnection
-          }
-
-          licenses {
-            license {
-              url mavenLicenseUrl
-            }
-          }
-
-          developers {
-            developer {
-              name mavenDeveloperName
-              email mavenDeveloperEmail
-              organization mavenDeveloperOrganization
-              organizationUrl mavenDeveloperUrl
-            }
-          }
-        }
-      }
     }
-  }
 
-  signing {
-    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-  }
-
-  task androidSourcesJar(type: Jar) {
-    classifier = "sources"
-    from android.sourceSets.main.java.sourceFiles
-  }
-
-  artifacts {
-    archives androidSourcesJar
-  }
+    repositories {
+        maven {
+            url "http://192.168.2.16:8081/nexus/content/repositories/releases/"
+            credentials {
+                username = 'releases'//System.getenv('MAVEN_USERNMAE')
+                password = 'release123'//System.getenv('MAVEN_PASSWD')
+            }
+        }
+    }
 }
